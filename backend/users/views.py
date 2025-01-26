@@ -1,14 +1,21 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
+from rest_framework_simplejwt.tokens import RefreshToken
 from utils import connect_db
 from pymongo.errors import PyMongoError
-from datetime import datetime
+from datetime import datetime, timedelta
 from bson import ObjectId
 
 # Connecting the centralized db
 db = connect_db()
 users_collections = db['users']
+
+def generate_auth_tokens(user):
+    refresh = RefreshToken()
+    refresh['email'] = user['email']
+    refresh['password'] = user['password']
+    return refresh
 
 
 @api_view(['POST'])
@@ -23,12 +30,37 @@ def login_user(request):
         user = users_collections.find_one({"email": email})
 
         if not user:
-            return Response({'message': 'User doest not exist!'})
+            return Response({'message': 'User doest not exist!'}, status=status.HTTP_401_UNAUTHORIZED)
+        elif user['password'] != password:
+            return Response({'message': 'Incorrect Password!'}, status=status.HTTP_401_UNAUTHORIZED)
+        
+        refresh_token = generate_auth_tokens(user)
+        access_token = refresh_token.access_token
         
         user['_id'] = str(user['_id'])
-        
-        return Response({'message': 'Login Successful!', 'user': user}, status=status.HTTP_202_ACCEPTED)
-    except:
+        response =  Response({'message': 'Login Successful!', 'user': user }, status=status.HTTP_202_ACCEPTED)
+
+        response.set_cookie(
+            'access_token',
+            access_token,   
+            httponly=True,            
+            secure=True,  # Must be True in production
+            max_age=timedelta(days=1),
+            samesite='None',
+        )
+
+        response.set_cookie(
+            'refresh_token',
+            refresh_token,   
+            httponly=True,            
+            secure=True,  # Must be True in production
+            max_age=timedelta(days=7),
+            samesite='None',
+        )
+
+        return response
+    
+    except Exception as e:
         return Response({'message': 'Something went wrong!'}, status=status.HTTP_400_BAD_REQUEST)
 
 
@@ -57,4 +89,4 @@ def register_user(request):
     
     except Exception as e:
         print(f'Error: {e}')
-        return Response({'message': 'Something went wrong!'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': 'Something went wrong!', 'error': e}, status=status.HTTP_400_BAD_REQUEST)
