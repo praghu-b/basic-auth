@@ -8,7 +8,7 @@ axios.defaults.baseURL = 'http://localhost:8000/'
 axios.defaults.withCredentials = true
 
 createRoot(document.getElementById('root')).render(
-  <StrictMode>
+  <>
     <App/>
-  </StrictMode>,
+  </>
 )

@@ -15,10 +15,12 @@ const Login = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            const response = await axios.post(`/users/login/`, { email, password }, { withCredentials: true})
-            console.log(response);
-            
-            if(response.status==202) {
+            const response = await axios.post(`/users/login/`, { email, password }, { withCredentials: true })
+            alert('User logged in successfully!')
+
+            localStorage.setItem('userInfo', JSON.stringify(response.data.user))
+
+            if (response.status == 202) {
                 setErrorMessage('')
                 navigate('/user-home')
             }
@@ -35,12 +37,12 @@ const Login = () => {
                 <form onSubmit={handleSubmit} className='space-y-4'>
                     <div className='text-sm'>
                         <label htmlFor="email" className='block mb-2 font-medium'>Email</label>
-                        <input type="email" id='email' value={email} onChange={(e) => setEmail(e.target.value)} className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your email' required/>
+                        <input type="email" id='email' value={email} onChange={(e) => setEmail(e.target.value)} className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your email' autoComplete='username' required />
                     </div>
                     <div className='text-sm'>
                         <label htmlFor="password" className='block mb-2 font-medium'>Password</label>
                         <div className='relative'>
-                            <input type={!showPassword ? 'password' : 'text'} value={password} onChange={(e) => setPassword(e.target.value)} id='password' className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your password' required/>
+                            <input type={!showPassword ? 'password' : 'text'} value={password} onChange={(e) => setPassword(e.target.value)} id='password' className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your password' autoComplete='new-password' required />
                             <a className='absolute inset-y-0 right-3 flex items-center' onClick={() => setShowPassoword(!showPassword)}>{!showPassword ? <FaEye /> : <FaEyeSlash />}</a>
                         </div>
                     </div>
@@ -51,7 +53,7 @@ const Login = () => {
                     </div>
                     <div className='text-center'>
                         <small>Don't have an account? <a onClick={() => navigate('/signup')} className='text-violet-500 cursor-pointer'>Sign Up</a></small>
-                        { errorMessage && 
+                        {errorMessage &&
                             <small className='block text-red-500'>{errorMessage}</small>
                         }
                     </div>

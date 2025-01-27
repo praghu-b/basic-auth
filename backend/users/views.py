@@ -1,15 +1,16 @@
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework_simplejwt.tokens import RefreshToken
+from rest_framework_simplejwt.tokens import RefreshToken, AccessToken
+from rest_framework.exceptions import AuthenticationFailed
 from utils import connect_db
 from pymongo.errors import PyMongoError
 from datetime import datetime, timedelta
 from bson import ObjectId
 
-# Connecting the centralized db
 db = connect_db()
 users_collections = db['users']
+
 
 def generate_auth_tokens(user):
     refresh = RefreshToken()
@@ -17,6 +18,58 @@ def generate_auth_tokens(user):
     refresh['password'] = user['password']
     return refresh
 
+
+@api_view(['POST'])
+def validate_token(request):
+    access_token = request.COOKIES.get('access_token')
+    if not access_token:
+        raise AuthenticationFailed('Token not found')
+    
+    try:
+        AccessToken(access_token)
+    except Exception as e:
+        raise AuthenticationFailed(f'{e}')
+    
+    return Response({'message': "You have access to this route!"}, status=status.HTTP_202_ACCEPTED)
+
+
+@api_view(['POST'])
+def refresh_token(request):
+    refresh_token = request.COOKIES.get('refresh_token')
+    if not refresh_token:
+        raise AuthenticationFailed('Token not found')
+    
+    try:
+        refresh = RefreshToken(refresh_token)
+        new_access_token = str(refresh.access_token)
+
+        response = Response({'message': 'Token refreshed!'})
+        response.set_cookie(
+            'access_token',
+            new_access_token,   
+            httponly=False,            
+            secure=True,
+            max_age=timedelta(days=1),
+            samesite='None',
+        )
+
+        return response
+    except Exception as e:
+        raise AuthenticationFailed(f'{e}')
+    
+
+@api_view(['POST'])
+def logout_user(request):
+    try:
+        response = Response({'message': 'User Logged Out Successfully!'}, status=status.HTTP_200_OK)
+        
+        response.delete_cookie('access_token', path='/')
+        response.delete_cookie('refresh_token', path='/')
+
+        return response
+    except Exception as e:
+        Response({'message': f'{e}'}, status=status.HTTP_400_BAD_REQUEST)
+    
 
 @api_view(['POST'])
 def login_user(request):
@@ -30,7 +83,7 @@ def login_user(request):
         user = users_collections.find_one({"email": email})
 
         if not user:
-            return Response({'message': 'User doest not exist!'}, status=status.HTTP_401_UNAUTHORIZED)
+            return Response({'message': 'User does not exist!'}, status=status.HTTP_401_UNAUTHORIZED)
         elif user['password'] != password:
             return Response({'message': 'Incorrect Password!'}, status=status.HTTP_401_UNAUTHORIZED)
         
@@ -43,8 +96,8 @@ def login_user(request):
         response.set_cookie(
             'access_token',
             access_token,   
-            httponly=True,            
-            secure=True,  # Must be True in production
+            httponly=False,            
+            secure=True,
             max_age=timedelta(days=1),
             samesite='None',
         )
@@ -52,8 +105,8 @@ def login_user(request):
         response.set_cookie(
             'refresh_token',
             refresh_token,   
-            httponly=True,            
-            secure=True,  # Must be True in production
+            httponly=False,            
+            secure=True,
             max_age=timedelta(days=7),
             samesite='None',
         )
@@ -61,7 +114,7 @@ def login_user(request):
         return response
     
     except Exception as e:
-        return Response({'message': 'Something went wrong!'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'message': f'{e}'}, status=status.HTTP_400_BAD_REQUEST)
 
 
 @api_view(['POST'])

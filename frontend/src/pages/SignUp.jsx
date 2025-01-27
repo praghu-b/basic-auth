@@ -17,8 +17,8 @@ const SignUp = () => {
     const handleSubmit = async (e) => {
         e.preventDefault()
         try {
-            if(password!==confirmPassword) {
-                return alert("Passwords didn't match!")
+            if (password !== confirmPassword) {
+                return setErrorMessage("Passwords doesn't match!")
             }
 
             const response = await axios.post(`/users/register/`, { name, email, password })
@@ -26,7 +26,7 @@ const SignUp = () => {
 
             if (response.status == 201) {
                 setErrorMessage('')
-                alert(response.data.message)
+                navigate('/login')
             }
         } catch (error) {
             console.error(error.response?.data?.message || "Something Went Wrong")
@@ -45,19 +45,19 @@ const SignUp = () => {
                     </div>
                     <div className='text-sm'>
                         <label htmlFor="email" className='block mb-2 font-medium'>Email</label>
-                        <input type="email" id='email' value={email} onChange={(e) => setEmail(e.target.value)} className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your email' required />
+                        <input type="email" id='email' value={email} onChange={(e) => setEmail(e.target.value)} className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your email' autoComplete='username' required />
                     </div>
                     <div className='text-sm'>
                         <label htmlFor="password" className='block mb-2 font-medium'>Password</label>
                         <div className='relative'>
-                            <input type={!showPassword ? 'password' : 'text'} value={password} onChange={(e) => setPassword(e.target.value)} id='password' className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your password' required />
+                            <input type={!showPassword ? 'password' : 'text'} value={password} onChange={(e) => setPassword(e.target.value)} id='password' className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your password' autoComplete='new-password' required />
                             <a className='absolute inset-y-0 right-3 flex items-center' onClick={() => setShowPassoword(!showPassword)}>{!showPassword ? <FaEye /> : <FaEyeSlash />}</a>
                         </div>
                     </div>
                     <div className='text-sm'>
                         <label htmlFor="password" className='block mb-2 font-medium'>Confirm Password</label>
                         <div className='relative'>
-                            <input type={!showPassword ? 'password' : 'text'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} id='password' className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your password again' required />
+                            <input type={!showPassword ? 'password' : 'text'} value={confirmPassword} onChange={(e) => setConfirmPassword(e.target.value)} id='confirm-password' className='border border-gray-400 focus:outline-violet-500 rounded-md px-4 py-2 w-full' placeholder='Enter your password again' autoComplete='new-password' required />
                             <a className='absolute inset-y-0 right-3 flex items-center' onClick={() => setShowPassoword(!showPassword)}>{!showPassword ? <FaEye /> : <FaEyeSlash />}</a>
                         </div>
                     </div>
@@ -66,7 +66,7 @@ const SignUp = () => {
                             Sign Up
                         </button>
                     </div>
-                    <div className='text-center'>
+                    <div className='text-center flex flex-col space-y-2'>
                         <small>Already have an account? <a onClick={() => navigate('/login')} className='text-violet-500 cursor-pointer'>Sign In</a></small>
                         {errorMessage &&
                             <small className='block text-red-500'>{errorMessage}</small>
