@@ -42,7 +42,7 @@ A social media-like web application where users can create posts, comment, and i
    ```bash
    git clone <repo-url>
    cd backend
-````
+   ```
 
 2. Create a virtual environment:
 
